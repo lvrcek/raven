@@ -237,6 +237,10 @@ int main(int argc, char** argv) {
   }
 
   graph.Construct(sequences);
+  graph.PrintGfa("construct.gfa");
+
+  return 0;
+
   graph.Assemble();
   graph.Polish(sequences, m, n, g, cuda_poa_batches, cuda_banded_alignment,
       cuda_alignment_batches, num_polishing_rounds);

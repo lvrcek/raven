@@ -368,6 +368,17 @@ void Graph::Construct(std::vector<std::unique_ptr<biosoup::Sequence>>& sequences
     }
   }
 
+  auto num_valid_reads = [&] () -> std::size_t {
+    std::size_t nvr = 0;
+    for (const auto& it : piles_) {
+      if (!it->is_invalid()) ++nvr;
+    }
+    return nvr;
+  };
+
+  std::cerr << "[raven::Graph::Construct] num valid reads = "
+            << num_valid_reads() << std::endl;
+
   if (stage_ == -5) {  // trim and annotate piles
     timer.Start();
 
@@ -394,6 +405,9 @@ void Graph::Construct(std::vector<std::unique_ptr<biosoup::Sequence>>& sequences
               << std::fixed << timer.Stop() << "s"
               << std::endl;
   }
+
+  std::cerr << "[raven::Graph::Construct] num valid reads = "
+            << num_valid_reads() << std::endl;
 
   if (stage_ == -5) {  // resolve contained reads
     timer.Start();
@@ -429,11 +443,15 @@ void Graph::Construct(std::vector<std::unique_ptr<biosoup::Sequence>>& sequences
               << std::endl;
   }
 
+  std::cerr << "[raven::Graph::Construct] num valid reads = "
+            << num_valid_reads() << std::endl;
+
   if (stage_ == -5) {  // resolve chimeric sequences
     timer.Start();
 
     while (true) {
       auto components = connected_components();
+      std::vector<std::uint32_t> cm;
       for (const auto& it : components) {
         std::vector<std::uint32_t> medians;
         for (const auto& jt : it) {
@@ -444,6 +462,7 @@ void Graph::Construct(std::vector<std::unique_ptr<biosoup::Sequence>>& sequences
             medians.begin() + medians.size() / 2,
             medians.end());
         std::uint32_t median = medians[medians.size() / 2];
+        cm.emplace_back(median);
 
         std::vector<std::future<void>> thread_futures;
         for (const auto& jt : it) {
@@ -461,6 +480,11 @@ void Graph::Construct(std::vector<std::unique_ptr<biosoup::Sequence>>& sequences
         }
         thread_futures.clear();
       }
+
+      std::sort(cm.begin(), cm.end());
+      std::cerr << "[raven::Graph::Construct] num components = "
+                << components.size()
+                << ", median ~= " << cm[cm.size() / 2] << std::endl;
 
       bool is_changed = false;
       for (std::uint32_t i = 0; i < overlaps.size(); ++i) {
@@ -497,6 +521,9 @@ void Graph::Construct(std::vector<std::unique_ptr<biosoup::Sequence>>& sequences
               << std::fixed << timer.Stop() << "s"
               << std::endl;
   }
+
+  std::cerr << "[raven::Graph::Construct] num valid reads = "
+            << num_valid_reads() << std::endl;
 
   if (stage_ == -5) {  // checkpoint
     ++stage_;
@@ -2022,7 +2049,7 @@ void Graph::PrintGfa(const std::string& path) const {
       continue;
     }
     os << "S\t" << it->name
-       << "\t"  << it->data
+       << "\t"  << "*"  // it->data
        << "\tLN:i:" << it->data.size()
        << "\tRC:i:" << it->count
        << std::endl;
