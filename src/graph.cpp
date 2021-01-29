@@ -16,6 +16,8 @@
 #include "cereal/archives/json.hpp"
 #include "racon/polisher.hpp"
 
+#include "edlib.h"
+
 namespace raven {
 
 Graph::Node::Node(const biosoup::NucleicAcid& sequence)
@@ -2007,6 +2009,14 @@ void Graph::PrintCsv(const std::string& path) const {
     if (it == nullptr) {
       continue;
     }
+    std::string lhs{it->tail->sequence->InflateData(it->length)};
+    std::string rhs{it->head->sequence->InflateData(0, lhs.size())};
+    EdlibAlignResult result = edlibAlign(
+        lhs.c_str(), lhs.size(),
+	rhs.c_str(), rhs.size(),
+	edlibDefaultAlignConfig());
+    double score = 1 - result.editDistance / static_cast<double>(lhs.size());
+
     os << it->tail->id << " [" << it->tail->id / 2 << "]"
        << " LN:i:" << it->tail->sequence->inflated_len
        << " RC:i:" << it->tail->count
@@ -2015,7 +2025,7 @@ void Graph::PrintCsv(const std::string& path) const {
        << " LN:i:" << it->head->sequence->inflated_len
        << " RC:i:" << it->head->count
        << ",1,"
-       << it->id << " " << it->length << " " << it->weight
+       << it->id << " " << it->length << " " << it->weight << " " << score
        << std::endl;
   }
   for (const auto& it : nodes_) {  // circular edges TODO(rvaser): check
