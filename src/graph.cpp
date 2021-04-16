@@ -892,6 +892,8 @@ void Graph::Assemble() {
 
   biosoup::Timer timer{};
 
+  PrintCsv("graph_1.csv");
+
   if (stage_ == -3) {  // remove transitive edges
     timer.Start();
 
@@ -901,6 +903,8 @@ void Graph::Assemble() {
               << std::fixed << timer.Stop() << "s"
               << std::endl;
   }
+
+  PrintCsv("graph_2.csv");
 
   if (stage_ == -3) {  // checkpoint
     ++stage_;
@@ -935,6 +939,8 @@ void Graph::Assemble() {
               << std::endl;
   }
 
+  PrintCsv("graph_3.csv");
+
   if (stage_ == -2) {  // checkpoint
     ++stage_;
     if (checkpoints_) {
@@ -950,7 +956,14 @@ void Graph::Assemble() {
     timer.Start();
 
     CreateUnitigs(42);  // speed up force directed layout
+
+    PrintCsv("graph_4.csv");
+    PrintCsv("graph_before.csv");
+    PrintGfa("graph_before.gfa");
+
     RemoveLongEdges(16);
+
+    PrintCsv("graph_5.csv");
 
     std::cerr << "[raven::Graph::Assemble] removed long edges "
               << std::fixed << timer.Stop() << "s"
@@ -968,6 +981,8 @@ void Graph::Assemble() {
 
     timer.Stop();
   }
+
+  PrintCsv("graph_6.csv");
 
   if (stage_ == -1) {  // checkpoint
     ++stage_;
